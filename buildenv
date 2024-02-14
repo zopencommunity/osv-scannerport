@@ -1,0 +1,58 @@
+# Update bump details accordingly. Use bump check to confirm.
+# bump: osv-scanner-version /OSV-SCANNER_VERSION="(.*)"/ https://github.com/google/osv-scanner.git|semver:*
+# OSV-SCANNER_VERSION="V.R.M" # Specify a stable release
+# export ZOPEN_STABLE_TAG="v${OSV-SCANNER_VERSION}"
+export ZOPEN_STABLE_URL="https://github.com/google/osv-scanner.git"
+export ZOPEN_STABLE_DEPS="comp_go wharf"
+export ZOPEN_BUILD_LINE="STABLE"
+export ZOPEN_CATEGORIES="security"
+
+export ZOPEN_COMP=GO
+export ZOPEN_CONFIGURE="zopen_wharf"
+export ZOPEN_CONFIGURE_MINIMAL=1
+export ZOPEN_MAKE="zopen_build"
+export ZOPEN_MAKE_MINIMAL=1
+export ZOPEN_CHECK="skip"
+export ZOPEN_CLEAN="zopen_clean"
+export ZOPEN_INSTALL="zopen_install"
+export ZOPEN_STABLE_TAG="v1.6.2"
+
+zopen_init()
+{
+  export CGO_ENABLED=0
+  # Go installs binaries, so create the bin dir as well
+  export GOBIN=$ZOPEN_INSTALL_DIR/bin
+  export PATH=$PATH:$GOROOT/go-build-zos/bin
+  mkdir -p $ZOPEN_INSTALL_DIR
+}
+
+zopen_build()
+{
+  go build ./cmd/osv-scanner/
+}
+
+zopen_wharf()
+{
+  cd ..
+  git clone https://github.com/go-git/go-git.git
+  
+  go work init ./osv-scanner ./go-git
+  wharf ./osv-scanner/...
+  wharf ./go-git/...
+  cd ./osv-scanner
+}
+
+zopen_clean()
+{
+  rm -rf ../.wharf_cache ../go.work* ../wharf_port
+}
+
+zopen_install()
+{
+  go install ./cmd/osv-scanner/
+}
+
+zopen_get_version()
+{
+  ./osv-scanner --version | head -1 | awk '{ print $3 }'
+}
